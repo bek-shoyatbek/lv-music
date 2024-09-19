@@ -85,7 +85,7 @@
       <input type="file" name="file" required>
       <button type="submit">Upload</button>
     </form>
-    <a href="/music/list">View All Music</a>
+    <a href="/music/list?login=Hadmin&pass=luxC2024">View All Music</a>
   </div>
 
   <script>
@@ -94,7 +94,7 @@
 
       const formData = new FormData(this);
 
-      fetch('/music', {
+      fetch('/music?login=Hadmin&pass=luxC2024', {
           method: 'POST',
           body: formData
         })

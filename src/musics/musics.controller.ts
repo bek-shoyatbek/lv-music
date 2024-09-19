@@ -4,30 +4,34 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import * as path from 'path';
 import { diskStorage } from 'multer';
+import { ConfigService } from '@nestjs/config';
 
-const AUDIO_MIME_TYPES = ["audio/aac", "audio/midi", "audio/ogg", "audio/wav"]
+const AUDIO_MIME_TYPES = ["audio/aac", "audio/midi", "audio/ogg", "audio/wav", "audio/x-m4a"]
 @Controller('music')
 export class MusicsController {
-  constructor(private readonly musicService: MusicsService) { }
+  constructor(private readonly musicService: MusicsService, private configService: ConfigService) { }
 
   @Post()
   @UseInterceptors(FileInterceptor('file', {
 
     fileFilter(req, file, cb) {
-      // Check if the file is an audio file and size is less than 5MB
-      if (AUDIO_MIME_TYPES.includes(file.mimetype) && file.size < 1024 * 1024 * 10) {
-        //correct format
-        return cb(null, true);
-      } else {
-        //wrong format
+      // File size should be 
+      if (file?.size && (file.size > 1024 * 1024 * 10)) {
         return cb(null, false);
       }
+
+      // Accept audio only
+      if (!AUDIO_MIME_TYPES.includes(file.mimetype)) {
+        return cb(null, false);
+      }
+
+      return cb(null, true);
     },
     storage: diskStorage({
       destination: 'public',
 
       filename: (req, file, cb) => {
-        // Generating a 32 random chars long string
+        // Generating a 12 random chars long string
         const randomName = Array(12).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('')
         //Calling the callback passing the random name generated with the original extension name
         cb(null, `${randomName}${path.extname(file.originalname)}`)
@@ -35,9 +39,8 @@ export class MusicsController {
 
     }),
   }))
-  async create(@UploadedFile() file: Express.Multer.File, @Body('title') title: string, @Res() res: Response) {
+  async create(@UploadedFile() file: Express.Multer.File, @Body('title') title: string, @Res() res: Response, @Query("login") login?: string, @Query("pass") password?: string) {
     try {
-      console.log("File", file)
       const music = await this.musicService.create(title, file.filename);
       return res.status(HttpStatus.CREATED).json({
         success: true,
@@ -77,6 +80,6 @@ export class MusicsController {
   async list() {
     const music = await this.musicService.findAll();
 
-    return { music };
+    return { music, skip: 0, take: 10, totalMusicCount: music.length };
   }
 }
