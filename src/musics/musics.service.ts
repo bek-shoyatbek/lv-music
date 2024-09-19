@@ -33,17 +33,18 @@ export class MusicsService {
             where: { id },
         });
 
-        if (!file) {
-            throw new Error('File not found');
+        if (file) {
+            await this.prisma.music.delete({
+                where: { id },
+            });
+            // Delete file
+            const filePath = `public/${file.filePath}`;
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
-        await this.prisma.music.delete({
-            where: { id },
-        });
-        // Delete file
-        const filePath = `public/${file.filePath}`;
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
+
+        return true;
 
     }
 }
